@@ -7275,6 +7275,7 @@ size_t FmtStrtoNumChars(const char* format, ...)
 	}
 }
 
+// do we want to add an automatic window resize in there based on the length of the longest line in the printed big character string?
 /*
 	- Operates in an analogous manner as regular printf, takes in a format string, variable number of arguments, and prints out in "big characters"
 	- Not really sure what to do about letters getting cut in half at the console window's boundary
@@ -7283,7 +7284,7 @@ size_t FmtStrtoNumChars(const char* format, ...)
 */
 int bigprintf(const char* format, ...)
 {
-	unsigned long offset = 0;
+	size_t offset = 0;
 	char stopchar = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 	char* buffer;
 	char* work_buffer;
@@ -7315,9 +7316,9 @@ int bigprintf(const char* format, ...)
 		{
 			stopchar = work_buffer[offset];
 			printbigCharLine(work_buffer, offset); // print all the chars from current char pointed to by buffer to buffer[offset]
-			work_buffer += offset + (unsigned long)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
+			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
 			offset = 0;
-			break;
+			continue;
 		}
 		offset++;
 	}

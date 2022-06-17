@@ -7,7 +7,8 @@
 
 int main(void)
 {
-	bigprintf("Testing: %d, %s", 69, "Neat");
+	//bigprintf("Testing: %d, %s", 69, "Neat");
+	bigprintf("Hello,\nWorld!");
 	
 	return 0;
 }
