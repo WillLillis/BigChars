@@ -3,7 +3,7 @@ Created a version of "printf" that prints out multi-line versions of characters,
 
 bigprintf("Hello, World!");
 
-results in
+results in (view the "raw" version of the ReadMe, github's preview doesn't display it properly)
 
  __      __                 __          __                                           _        _                             __                _      __
 |  |    |  |               |_ |        |_ |                                         | |      | |                           |_ |              | |    |  |
