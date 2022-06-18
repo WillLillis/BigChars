@@ -1,6 +1,6 @@
 #pragma once
-#include<stdarg.h>
 #include<stdio.h>
+#include<stdarg.h>
 #include<malloc.h>
 #include<assert.h>
 #include"BigCharsDef.h"
@@ -12,11 +12,11 @@ typedef struct retWrapper {
 	char layer[13];
 }retWrapper;
 
-void retWrapperAssign(retWrapper* structin, const char input[13])
+void retWrapperAssign(retWrapper* struct_in, const char input[13])
 {
 	for (int i = 0; i < 13; i++)
 	{
-		structin->layer[i] = input[i];
+		struct_in->layer[i] = input[i];
 	}
 }
 
@@ -24,14 +24,14 @@ void retWrapperAssign(retWrapper* structin, const char input[13])
 // seems to be some overhead in this approach with having to wrap the array in a struct in order to return it, may be better just to print it inside the function
 // gross disgusting nested switch statements for each character and each of their layers
 // there has to be a better way
-retWrapper getbigCharLayer(char inchar, int layer)
+retWrapper getbigCharLayer(char in_char, int layer)
 {
+	assert(in_char >= 32 && in_char <= 126);
 	assert(layer >= 0 && layer < NUM_LAYERS);
-	assert(inchar >= 32 && inchar <= 126);
 
 	retWrapper wrapper;
 
-	switch (inchar) {
+	switch (in_char) {
 	case 32:
 		switch (layer) {
 		case 0:
@@ -3546,6 +3546,9 @@ retWrapper getbigCharLayer(char inchar, int layer)
 			break;
 		}
 		break;
+	default:
+		retWrapperAssign(&wrapper, "\0            ");
+		break;
 	}
 
 	return wrapper;
@@ -3554,12 +3557,12 @@ retWrapper getbigCharLayer(char inchar, int layer)
 // prints the requested layer of the given char
 // gross disgusting nested switch statements for each character and each of their layers
 // there has to be a better way
-void printbigCharLayer(char inchar, int layer)
+void printbigCharLayer(char in_char, int layer)
 {
+	assert(in_char >= 32 && in_char <= 126);
 	assert(layer >= 0 && layer < NUM_LAYERS);
-	assert(inchar >= 32 && inchar <= 126);
 
-	switch (inchar) {
+	switch (in_char) {
 	case 32:
 		switch (layer) {
 		case 0:
@@ -6819,37 +6822,37 @@ void printbigCharLayer(char inchar, int layer)
 	case 120:
 		switch (layer) {
 		case 0:
-			printf("%s", ASCII_110_LAYER_0);
+			printf("%s", ASCII_120_LAYER_0);
 			break;
 		case 1:
-			printf("%s", ASCII_110_LAYER_1);
+			printf("%s", ASCII_120_LAYER_1);
 			break;
 		case 2:
-			printf("%s", ASCII_110_LAYER_2);
+			printf("%s", ASCII_120_LAYER_2);
 			break;
 		case 3:
-			printf("%s", ASCII_110_LAYER_3);
+			printf("%s", ASCII_120_LAYER_3);
 			break;
 		case 4:
-			printf("%s", ASCII_110_LAYER_4);
+			printf("%s", ASCII_120_LAYER_4);
 			break;
 		case 5:
-			printf("%s", ASCII_110_LAYER_5);
+			printf("%s", ASCII_120_LAYER_5);
 			break;
 		case 6:
-			printf("%s", ASCII_110_LAYER_6);
+			printf("%s", ASCII_120_LAYER_6);
 			break;
 		case 7:
-			printf("%s", ASCII_110_LAYER_7);
+			printf("%s", ASCII_120_LAYER_7);
 			break;
 		case 8:
-			printf("%s", ASCII_110_LAYER_8);
+			printf("%s", ASCII_120_LAYER_8);
 			break;
 		case 9:
-			printf("%s", ASCII_110_LAYER_9);
+			printf("%s", ASCII_120_LAYER_9);
 			break;
 		case 10:
-			printf("%s", ASCII_110_LAYER_10);
+			printf("%s", ASCII_120_LAYER_10);
 			break;
 		}
 		break;
@@ -7074,7 +7077,8 @@ void printbigCharLayer(char inchar, int layer)
 			printf("%s", ASCII_126_LAYER_10);
 			break;
 		}
-
+	default: // default is to print nothing
+		break;
 
 		// add cases for extended ASCII chars?
 	}
@@ -7285,7 +7289,7 @@ size_t FmtStrtoNumChars(const char* format, ...)
 int bigprintf(const char* format, ...)
 {
 	size_t offset = 0;
-	char stopchar = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
+	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 	char* buffer;
 	char* work_buffer;
 	size_t buff_size;
@@ -7310,11 +7314,11 @@ int bigprintf(const char* format, ...)
 
 	// iterate through buffer until a newline or null terminator char is found, 
 	// pass the starting point and the number of chars to go out past that to printbigCharLine
-	while (stopchar != '\0')
+	while (stop_char != '\0')
 	{	
 		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
 		{
-			stopchar = work_buffer[offset];
+			stop_char = work_buffer[offset];
 			printbigCharLine(work_buffer, offset); // print all the chars from current char pointed to by buffer to buffer[offset]
 			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
 			offset = 0;
