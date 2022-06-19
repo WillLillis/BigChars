@@ -7084,20 +7084,31 @@ void printbigCharLayer(char in_char, int layer)
 	}
 }
 
-// change to calls to printf, with format string of "%s", and the argument being the return value of "getbigCharLine" or something similar
-// seems more modular that way
-void printbigCharLine(char* buffer, unsigned long offset)
+void printbigCharLine(char* buffer, size_t offset)
 {
 	for (int layer = 0; layer < NUM_LAYERS; layer++)
 	{
 		for (unsigned long curr_char = 0; curr_char < offset; curr_char++)
 		{
 			printbigCharLayer(buffer[curr_char], layer);
-			//printf("%s", getbigCharLayer(buffer[currchar], layer).layer); // too much overhead?
 		}
 		printf("\n");
 	}
 	printf("\n");
+}
+
+void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
+{
+	assert(stream != NULL);
+	for (int layer = 0; layer < NUM_LAYERS; layer++)
+	{
+		for (unsigned long curr_char = 0; curr_char < offset; curr_char++)
+		{
+			fprintf(stream, "%s", getbigCharLayer(buffer[curr_char], layer).layer);
+		}
+		fprintf(stream, "\n");
+	}
+	fprintf(stream, "\n");
 }
 
 // this looks like a lot...especially with all of the options added by the various C standards over the years, leads to weird sub-cases
@@ -7296,7 +7307,7 @@ int bigprintf(const char* format, ...)
 	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
 
 	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
-	buff_size = FmtStrtoNumChars(format, (va_list)argptr1);
+	buff_size = FmtStrtoNumChars(format, argptr1);
 	va_end(argptr1);
 	if (buff_size == 0) // encoding error, we won't print
 	{
@@ -7307,7 +7318,7 @@ int bigprintf(const char* format, ...)
 	work_buffer = buffer; // want to preserver buffer's original address so we can free it later, work_buffer will be incremented as we iterate through the buffer
 
 	va_start(argptr2, format); // do we need to restart the argument list thingy?
-	vsnprintf(buffer, buff_size, format, (va_list)argptr2); // might want to eliminate this call but we'll optimize later
+	vsnprintf(buffer, buff_size, format, argptr2); // might want to eliminate this call but we'll optimize later
 	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
 	// we can optimize later
 	va_end(argptr2);
@@ -7332,5 +7343,108 @@ int bigprintf(const char* format, ...)
 		free(buffer);
 	}
 	
-	return buff_size - 1; // printed everything but the null terminator
+	return (int)(buff_size - 1); // printed everything but the null terminator
 }
+
+int bigfprintf(FILE* stream, const char* format, ...)
+{
+	assert(stream != NULL);
+	// Same start as bigprintf....
+	size_t offset = 0;
+	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
+	char* buffer;
+	char* work_buffer;
+	size_t buff_size;
+	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
+
+	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
+	buff_size = FmtStrtoNumChars(format, argptr1);
+	va_end(argptr1);
+	if (buff_size == 0) // encoding error, we won't print
+	{
+		return -1;
+	}
+	buffer = (char*)malloc(buff_size); // no need to do * sizeof(char) because that's just one byte
+	assert(buffer != NULL);
+	work_buffer = buffer; // want to preserver buffer's original address so we can free it later, work_buffer will be incremented as we iterate through the buffer
+
+	va_start(argptr2, format); // do we need to restart the argument list thingy?
+	vsnprintf(buffer, buff_size, format, argptr2); // might want to eliminate this call but we'll optimize later
+	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
+	// we can optimize later
+	va_end(argptr2);
+
+	// iterate through buffer until a newline or null terminator char is found, 
+	// pass the starting point and the number of chars to go out past that to printbigCharLine
+	while (stop_char != '\0')
+	{
+		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
+		{
+			stop_char = work_buffer[offset];
+			fprintbigCharLine(stream, work_buffer, offset);
+			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
+			offset = 0;
+			continue;
+		}
+		offset++;
+	}
+
+	if (buffer != NULL) // still checking even tho we assert'd up above
+	{
+		free(buffer);
+	}
+
+	return (int)(buff_size - 1); // printed everything but the null terminator
+}
+
+// to be implemented...
+//int bigsnprintf(char* buffer, const char* format, ...)
+//{
+//	assert(buffer != NULL);
+//	// Same start as bigprintf....
+//	size_t offset = 0;
+//	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
+//	char* buffer;
+//	char* work_buffer;
+//	size_t buff_size;
+//	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
+//
+//	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
+//	buff_size = FmtStrtoNumChars(format, argptr1);
+//	va_end(argptr1);
+//	if (buff_size == 0) // encoding error, we won't print
+//	{
+//		return -1;
+//	}
+//	buffer = (char*)malloc(buff_size); // no need to do * sizeof(char) because that's just one byte
+//	assert(buffer != NULL);
+//	work_buffer = buffer; // want to preserver buffer's original address so we can free it later, work_buffer will be incremented as we iterate through the buffer
+//
+//	va_start(argptr2, format); // do we need to restart the argument list thingy?
+//	vsnprintf(buffer, buff_size, format, argptr2); // might want to eliminate this call but we'll optimize later
+//	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
+//	// we can optimize later
+//	va_end(argptr2);
+//
+//	// iterate through buffer until a newline or null terminator char is found, 
+//	// pass the starting point and the number of chars to go out past that to printbigCharLine
+//	while (stop_char != '\0')
+//	{
+//		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
+//		{
+//			stop_char = work_buffer[offset];
+//			fprintbigCharLine(stream, work_buffer, offset);
+//			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
+//			offset = 0;
+//			continue;
+//		}
+//		offset++;
+//	}
+//
+//	if (buffer != NULL) // still checking even tho we assert'd up above
+//	{
+//		free(buffer);
+//	}
+//
+//	return (int)(buff_size - 1); // printed everything but the null terminator
+//}

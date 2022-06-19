@@ -1823,7 +1823,7 @@
 #define ASCII_97_LAYER_4		" _________  "
 #define ASCII_97_LAYER_5		"|________ \\ "
 #define ASCII_97_LAYER_6		" ________\\ \\"
-#define ASCII_97_LAYER_7		"/ _______ \ |"
+#define ASCII_97_LAYER_7		"/ _______ \\ |"
 #define ASCII_97_LAYER_8		"|/       \\ |"
 #define ASCII_97_LAYER_9		"|\\_______/||"
 #define ASCII_97_LAYER_10		"\\ _______/||"
