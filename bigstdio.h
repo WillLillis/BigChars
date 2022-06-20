@@ -7125,7 +7125,7 @@ void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
 	fprintf(stream, "\n");
 }
 
-size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff, size_t offset, bool trailing_newline)
+size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff, size_t offset, bool trailing_newline, bool* overrun_flag)
 {
 	assert(dest_buff != NULL);
 	assert(src_buff != NULL);
@@ -7135,7 +7135,8 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 
 	if (bigcharsperbuffer(dest_buff_size) < offset - 1) // if there's not enough space in the destination buffer, just print what characters we can
 	{
-		offset = bigcharsperbuffer(dest_buff_size) - (unsigned long)1;
+		offset = bigcharsperbuffer(dest_buff_size) - 1;
+		*overrun_flag = true;
 	}
 
 	for (int curr_layer = 0; curr_layer < NUM_LAYERS; curr_layer++) // for each layer in the big char line
@@ -7346,6 +7347,7 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 	size_t buff_size, big_buff_size, chars_placed;
 	int total_chars = 0;
 	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
+	bool overrun_flag = false;
 
 	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
 	buff_size = FmtStrtoNumChars(format, argptr1); 
@@ -7367,12 +7369,12 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 
 	// iterate through buffer until a newline or null terminator char is found, 
 	// pass the starting point and the number of chars to go out past that to printbigCharLine
-	while (stop_char != '\0')
+	while (stop_char != '\0' && !overrun_flag)
 	{
 		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
 		{
 			stop_char = work_buffer[offset];
-			chars_placed = snprintbigCharLine(dest_buff, dest_buff_size, work_buffer, offset, stop_char == '\n');
+			chars_placed = snprintbigCharLine(dest_buff, dest_buff_size, work_buffer, offset, stop_char == '\n', &overrun_flag);
 			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
 			dest_buff += chars_placed;
 			dest_buff_size -= chars_placed;
@@ -7383,7 +7385,7 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 		offset++;
 	}
 
-	*dest_buff = '\0'; // place null terminator at end of buffer
+	*dest_buff = '\0'; // place null terminator at next available spot
 
 	if (buffer != NULL) // still checking even tho we assert'd up above
 	{

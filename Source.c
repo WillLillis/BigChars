@@ -18,7 +18,7 @@ int main(void)
 	}*/
 
 	char* test_buff;
-	size_t test_buff_size = 2000;
+	size_t test_buff_size = 1000;
 	size_t how_far = 0;
 
 	test_buff = (char*)malloc(test_buff_size);
@@ -26,7 +26,7 @@ int main(void)
 
 	assert(test_buff != NULL);
 
-	chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Buffer!");
+	chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Buffer!\n%d", 5);
 
 	for (size_t i = 0; test_buff[i] != '\0'; i++)
 	{
