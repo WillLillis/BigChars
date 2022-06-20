@@ -3,10 +3,23 @@
 #include<stdarg.h>
 #include<malloc.h>
 #include<assert.h>
+#include<stdbool.h>
 #include"BigCharsDef.h"
 
-#define	NUM_LAYERS		11
-#define MAX_CHARS		65535
+#define	NUM_LAYERS			11
+#define CHARS_PER_LAYER		12
+#define MAX_CHARS			65535
+#define CHARS_PER_BIG_CHAR	132 // 11 lines times 12 chars per line
+
+inline fmin(size_t a, size_t b)
+{
+	return a < b ? a : b;
+}
+
+inline fmax(size_t a, size_t b)
+{
+	return a > b ? a : b;
+}
 
 typedef struct retWrapper {
 	char layer[13];
@@ -7100,6 +7113,7 @@ void printbigCharLine(char* buffer, size_t offset)
 void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
 {
 	assert(stream != NULL);
+	assert(buffer != NULL);
 	for (int layer = 0; layer < NUM_LAYERS; layer++)
 	{
 		for (unsigned long curr_char = 0; curr_char < offset; curr_char++)
@@ -7111,144 +7125,36 @@ void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
 	fprintf(stream, "\n");
 }
 
-// this looks like a lot...especially with all of the options added by the various C standards over the years, leads to weird sub-cases
-// could just allocate a max buffer size and print to that, and count characters that way
-	// or start by allocating a smaller buffer to deal with common case sizes, then if we blow past that redo it with the max buffer size
-	// Need to decide on a max buffer size, the min seems to be 4095 by the C99 standard...
-// go through format string here and calculate the size of the required buffer to print its resulting string
-/*
-size_t FmtStrtoNumChars(const char* format, ...)
+size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff, size_t offset, bool trailing_newline)
 {
-	va_list argptr;
-	size_t accum = 0;
-	size_t raw_num = 0;
-	const char* curr;
-	
-	// Need 'val' variables for all data types you can pass as an arg to printf
-	int intval;
-	double doubleval;
-	unsigned int unsignedintval;
-	unsigned int unsignedoctalval;
-	unsigned int unsignedhexval;
-	char* stringval;
-	int* nval;
-	void* pval;
+	assert(dest_buff != NULL);
+	assert(src_buff != NULL);
 
+	retWrapper layer_temp;
+	size_t dest_buff_index = 0;
 
-	va_start(argptr, format); // argptr should now point to first unnamed argument (and not format?)
-
-	curr = format;
-	do 
+	if (bigcharsperbuffer(dest_buff_size) < offset - 1) // if there's not enough space in the destination buffer, just print what characters we can
 	{
-		raw_num++;
-		// we're done
-		if (*curr == '\0')
-		{
-			accum++;
-			break;
-		}
-		// just a normal character, add it to the total
-		if (*curr != '%')
-		{
-			accum++; 
-			continue; // neat, didn't know this existed
-		}
+		offset = bigcharsperbuffer(dest_buff_size) - (unsigned long)1;
+	}
 
-		// still need to add handling of flags, width, precision, and length args
-			// for flags maybe have BOOLS that then get passed as args to calculate widths of given specifiers
-			// width is used as a minimum, if a * is passed then the next arg has to be accessed as well
-			// precision specifies min digits to be printed for integer args, floating point gives number to print after decimal point, others...
-			// length sub specifiers will have to be some kind of BOOLEAN flags as well, to 
-
-		// otherwise, we need to handle a formatted argument
-		switch (*++curr)
+	for (int curr_layer = 0; curr_layer < NUM_LAYERS; curr_layer++) // for each layer in the big char line
+	{
+		for (size_t curr_offset = 0; curr_offset < offset; curr_offset++) // for all of the characters in the source buffer
 		{
-		case 'd': 
-			goto IntegerArg; // identical to 'i' case...so we may as well keep the code in one place
-		case 'i': // identical to 'd' case
-		IntegerArg:
-			intval = va_arg(argptr, int);
-			// Calculate width of given int here
-			break;
-		case 'u':
-			unsignedintval = va_arg(argptr, unsigned int);
-			// Calculate width of given unsigned int here
-			break;
-		// unsigned octal
-		case 'o':
-			// Calculate width of unsigned octal representation of int here
-			unsignedoctalval = va_arg(argptr, unsigned int); // assuming it doesn't actually get stored any differently...
-			break;
-		case 'x':
-			goto HexArg;
-		case 'X':
-		HexArg:
-			// Calculate width of unsigned hexadecimal representation of int here
-			unsignedhexval = va_arg(argptr, unsigned int);
-			break;
-		case 'f':
-			goto FloatArg;
-		case 'F':
-		FloatArg:
-			doubleval = va_arg(argptr, double);
-			// Calculate width of given double here
-			break;
-		case 'e':
-			goto SciNotation;
-		case 'E':
-		SciNotation:
-			// Calculate scientific notation width of given number
-			break;
-		// this looks like a pain in the ass...
-		case 'g':
-			goto BigG;
-		case 'G':
-		BigG:
-			// really weird rules, will have to read in some more
-		case 'a':
-			goto HexFloatingPoint;
-		case 'A':
-		HexFloatingPoint:
-			// Calculate width of given floating point hex number here
-			break;
-		// Just a single character
-		case 'c':
-			accum++;
-			break;
-		case 's':
-			// By the C standard it looks like non-null terminated string behavior is undefined, so we're good not doing any more sophisticated checks here? Just let it fail with a mem violation
-			for (stringval = va_arg(argptr, char*); *stringval; stringval++) // *stringval will evaluate to false if the value it points to is '\0'
+			layer_temp = getbigCharLayer(src_buff[curr_offset], curr_layer); // grab the current char's current layer
+			for (unsigned int i = 0; i < CHARS_PER_LAYER; i++) // assign the characters one by one to the destination buffer
 			{
-				accum++;
+				dest_buff[dest_buff_index++] = layer_temp.layer[i];
 			}
-			break;
-		case 'p':
-			pval = va_arg(argptr, void*);
-			// Calculate width of given pointer address
-			break;
-		//  Nothing printed.
-		//	The corresponding argument must be a pointer to a signed int.
-		//	The number of characters written so far is stored in the pointed location.
-		//
-		case 'n':
-			nval = va_arg(argptr, int*);
-			assert(nval != NULL); // double checking those nasty users' inputs
-			*nval = accum;
-			break;
-		// A % followed by a % just yields a single % in the print
-		case '%':
-			accum++;
-			break;
-		default:
-			accum++;
-			break;
 		}
-	} while (raw_num < MAX_CHARS);
-
-	va_end(argptr);
-	return accum;
+		if ((curr_layer < NUM_LAYERS - 1) || trailing_newline)
+		{
+			dest_buff[dest_buff_index++] = '\n';
+		}
+	}
+	return dest_buff_index;
 }
-*/
 
 size_t FmtStrtoNumChars(const char* format, ...)
 {
@@ -7288,6 +7194,38 @@ size_t FmtStrtoNumChars(const char* format, ...)
 			return 0; // encoding error returned from snprintf, we just won't print in that case
 		}
 	}
+}
+
+// The number of "big chars" you can fit in a buffer with the specified size
+// assumes there's a trailing newline or null terminator character at the end of the last layer
+unsigned long bigcharsperbuffer(size_t buff_size)
+{
+	// take another look at this 
+	buff_size -= (size_t)11; // take newline characters at the end of each layer into account
+	
+	return buff_size / CHARS_PER_BIG_CHAR; // then see how many big chars fit in the remaining space
+}
+
+// required buffer size for a big character representation of the given buffer
+size_t bigcharstobuffsize(const char* src_buff)
+{
+	assert(src_buff != NULL);
+	unsigned long curr_char = 0;
+	size_t accum = 0;
+
+	while (src_buff[curr_char] != '\0')
+	{
+		if (src_buff[curr_char] == '\n') // if it's a newline character, it's just printed as so (1-1 correspondence)
+		{
+			accum++;
+		}
+		else // otherwise we'll assume it's a printable character, and thus needs CHARS_PER_BIG_CHAR space
+		{
+			accum += CHARS_PER_BIG_CHAR;
+		}
+	}
+	
+	return ++accum; // one more for the null terminator
 }
 
 // do we want to add an automatic window resize in there based on the length of the longest line in the printed big character string?
@@ -7397,54 +7335,61 @@ int bigfprintf(FILE* stream, const char* format, ...)
 	return (int)(buff_size - 1); // printed everything but the null terminator
 }
 
-// to be implemented...
-//int bigsnprintf(char* buffer, const char* format, ...)
-//{
-//	assert(buffer != NULL);
-//	// Same start as bigprintf....
-//	size_t offset = 0;
-//	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
-//	char* buffer;
-//	char* work_buffer;
-//	size_t buff_size;
-//	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
-//
-//	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
-//	buff_size = FmtStrtoNumChars(format, argptr1);
-//	va_end(argptr1);
-//	if (buff_size == 0) // encoding error, we won't print
-//	{
-//		return -1;
-//	}
-//	buffer = (char*)malloc(buff_size); // no need to do * sizeof(char) because that's just one byte
-//	assert(buffer != NULL);
-//	work_buffer = buffer; // want to preserver buffer's original address so we can free it later, work_buffer will be incremented as we iterate through the buffer
-//
-//	va_start(argptr2, format); // do we need to restart the argument list thingy?
-//	vsnprintf(buffer, buff_size, format, argptr2); // might want to eliminate this call but we'll optimize later
-//	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
-//	// we can optimize later
-//	va_end(argptr2);
-//
-//	// iterate through buffer until a newline or null terminator char is found, 
-//	// pass the starting point and the number of chars to go out past that to printbigCharLine
-//	while (stop_char != '\0')
-//	{
-//		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
-//		{
-//			stop_char = work_buffer[offset];
-//			fprintbigCharLine(stream, work_buffer, offset);
-//			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
-//			offset = 0;
-//			continue;
-//		}
-//		offset++;
-//	}
-//
-//	if (buffer != NULL) // still checking even tho we assert'd up above
-//	{
-//		free(buffer);
-//	}
-//
-//	return (int)(buff_size - 1); // printed everything but the null terminator
-//}
+int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
+{
+	assert(dest_buff != NULL);
+	// Same start as bigprintf....
+	size_t offset = 0;
+	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
+	char* buffer;
+	char* work_buffer;
+	size_t buff_size, big_buff_size, chars_placed;
+	int total_chars = 0;
+	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
+
+	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
+	buff_size = FmtStrtoNumChars(format, argptr1); 
+	va_end(argptr1);
+	if (buff_size == 0) // encoding error, we won't print
+	{
+		return -1;
+	}
+
+	buffer = (char*)malloc(buff_size); // no need to do * sizeof(char) because that's just one byte
+	assert(buffer != NULL);
+	work_buffer = buffer; // want to preserver buffer's original address so we can free it later, work_buffer will be incremented as we iterate through the buffer
+
+	va_start(argptr2, format); // do we need to restart the argument list thingy?
+	vsnprintf(buffer, buff_size, format, argptr2); // might want to eliminate this call but we'll optimize later
+	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
+	// we can optimize later
+	va_end(argptr2);
+
+	// iterate through buffer until a newline or null terminator char is found, 
+	// pass the starting point and the number of chars to go out past that to printbigCharLine
+	while (stop_char != '\0')
+	{
+		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
+		{
+			stop_char = work_buffer[offset];
+			chars_placed = snprintbigCharLine(dest_buff, dest_buff_size, work_buffer, offset, stop_char == '\n');
+			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
+			dest_buff += chars_placed;
+			dest_buff_size -= chars_placed;
+			total_chars += (chars_placed) / CHARS_PER_BIG_CHAR;
+			offset = 0;
+			continue;
+		}
+		offset++;
+	}
+
+	*dest_buff = '\0'; // place null terminator at end of buffer
+
+	if (buffer != NULL) // still checking even tho we assert'd up above
+	{
+		free(buffer);
+	}
+
+	// incorrect return value, needs to be number of big chars printed, important distinction between normal new lines and big char new lines
+	return total_chars; // printed everything but the null terminator
+}
