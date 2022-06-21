@@ -7099,6 +7099,7 @@ void printbigCharLayer(char in_char, int layer)
 
 void printbigCharLine(char* buffer, size_t offset)
 {
+	assert(buffer != NULL);
 	for (int layer = 0; layer < NUM_LAYERS; layer++)
 	{
 		for (unsigned long curr_char = 0; curr_char < offset; curr_char++)
@@ -7208,25 +7209,66 @@ unsigned long bigcharsperbuffer(size_t buff_size)
 }
 
 // required buffer size for a big character representation of the given buffer
-size_t bigcharstobuffsize(const char* src_buff)
+size_t buff_to_big_buff_size(const char* src_buff)
 {
 	assert(src_buff != NULL);
 	unsigned long curr_char = 0;
+	unsigned long num_lines = 1;
 	size_t accum = 0;
 
 	while (src_buff[curr_char] != '\0')
 	{
 		if (src_buff[curr_char] == '\n') // if it's a newline character, it's just printed as so (1-1 correspondence)
 		{
-			accum++;
+			num_lines++;
 		}
 		else // otherwise we'll assume it's a printable character, and thus needs CHARS_PER_BIG_CHAR space
 		{
 			accum += CHARS_PER_BIG_CHAR;
 		}
+		curr_char++;
 	}
+
+	if (curr_char > 0 && src_buff[curr_char - 1] == '\n')
+	{
+		num_lines--;
+	}
+
+	accum += num_lines * NUM_LAYERS;
 	
-	return ++accum; // one more for the null terminator
+	return accum; // one more for the null terminator
+}
+
+size_t format_str_to_buff_size(const char* format, ...)
+{
+	size_t temp_buff_size, big_buff_size;
+	va_list argptr;
+	char* temp_buff;
+
+	va_start(argptr, format);
+	temp_buff_size = FmtStrtoNumChars(format, argptr);
+	va_end(argptr);
+	if (temp_buff_size == 0) // encoding error, we won't print
+	{
+		return 0;
+	}
+
+	temp_buff = (char*)malloc(temp_buff_size);
+	
+	assert(temp_buff != NULL);
+
+	va_start(argptr, format);
+	vsnprintf(temp_buff, temp_buff_size, format, argptr);
+	va_end(argptr);
+
+	big_buff_size = buff_to_big_buff_size(temp_buff);
+
+	if (temp_buff != NULL)
+	{
+		free(temp_buff);
+	}
+
+	return big_buff_size;
 }
 
 // do we want to add an automatic window resize in there based on the length of the longest line in the printed big character string?
@@ -7348,7 +7390,7 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 	int total_chars = 0;
 	va_list argptr1, argptr2; // not sure if I need two of these but should help with clarity
 	bool overrun_flag = false;
-
+	
 	va_start(argptr1, format); // argptr should now point to first unnamed argument (and not format?)
 	buff_size = FmtStrtoNumChars(format, argptr1); 
 	va_end(argptr1);
@@ -7373,6 +7415,7 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 	{
 		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
 		{
+			// clean this up 
 			stop_char = work_buffer[offset];
 			chars_placed = snprintbigCharLine(dest_buff, dest_buff_size, work_buffer, offset, stop_char == '\n', &overrun_flag);
 			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue

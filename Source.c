@@ -18,8 +18,11 @@ int main(void)
 	}*/
 
 	char* test_buff;
-	size_t test_buff_size = 1000;
+	size_t test_buff_size;
 	size_t how_far = 0;
+
+	const char buff[] = { "Hello, Buffer!\n%d"};
+	test_buff_size = format_str_to_buff_size(buff, 5);
 
 	test_buff = (char*)malloc(test_buff_size);
 	int chars_printed;
