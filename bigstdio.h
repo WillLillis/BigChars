@@ -39,7 +39,7 @@ void retWrapperAssign(retWrapper* struct_in, const char input[13])
 // there has to be a better way
 retWrapper getbigCharLayer(char in_char, int layer)
 {
-	assert(in_char >= 32 && in_char <= 126);
+	assert(in_char >= 0 && in_char <= 126);
 	assert(layer >= 0 && layer < NUM_LAYERS);
 
 	retWrapper wrapper;
@@ -3572,7 +3572,7 @@ retWrapper getbigCharLayer(char in_char, int layer)
 // there has to be a better way
 void printbigCharLayer(char in_char, int layer)
 {
-	assert(in_char >= 32 && in_char <= 126);
+	assert(in_char >= 0 && in_char <= 126);
 	assert(layer >= 0 && layer < NUM_LAYERS);
 
 	switch (in_char) {
@@ -7133,10 +7133,19 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 
 	retWrapper layer_temp;
 	size_t dest_buff_index = 0;
+	size_t temp_offset;
 
 	if (bigcharsperbuffer(dest_buff_size) < offset - 1) // if there's not enough space in the destination buffer, just print what characters we can
 	{
-		offset = bigcharsperbuffer(dest_buff_size) - 1;
+		temp_offset = bigcharsperbuffer(dest_buff_size);
+		if (temp_offset == 0)
+		{
+			offset = temp_offset;
+		}
+		else
+		{
+			offset = temp_offset - 1; 
+		}
 		*overrun_flag = true;
 	}
 
@@ -7200,8 +7209,13 @@ size_t FmtStrtoNumChars(const char* format, ...)
 
 // The number of "big chars" you can fit in a buffer with the specified size
 // assumes there's a trailing newline or null terminator character at the end of the last layer
+// only correct if passed in a single line buffer (to be used by printline functions only)
 unsigned long bigcharsperbuffer(size_t buff_size)
 {
+	if (buff_size < 11)
+	{
+		return 0;
+	}
 	// take another look at this 
 	buff_size -= (size_t)11; // take newline characters at the end of each layer into account
 	
@@ -7229,16 +7243,12 @@ size_t buff_to_big_buff_size(const char* src_buff)
 		curr_char++;
 	}
 
-	if (curr_char > 0 && src_buff[curr_char - 1] == '\n')
-	{
-		num_lines--;
-	}
-
-	accum += num_lines * NUM_LAYERS;
+	accum += (size_t)num_lines * (size_t)NUM_LAYERS;
 	
 	return accum; // one more for the null terminator
 }
 
+// pass in the same arguments as you would to printf, get back the required buffer size for the string's big char representation
 size_t format_str_to_buff_size(const char* format, ...)
 {
 	size_t temp_buff_size, big_buff_size;
@@ -7381,7 +7391,7 @@ int bigfprintf(FILE* stream, const char* format, ...)
 int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 {
 	assert(dest_buff != NULL);
-	// Same start as bigprintf....
+	// do we need to assert that format isn't NULL?
 	size_t offset = 0;
 	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 	char* buffer;
@@ -7421,7 +7431,15 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
 			dest_buff += chars_placed;
 			dest_buff_size -= chars_placed;
-			total_chars += (chars_placed) / CHARS_PER_BIG_CHAR;
+			if (stop_char == '\n')
+			{
+				total_chars += (chars_placed - 11) / CHARS_PER_BIG_CHAR; // not counting the newline chars placed at the end of the big char line
+				total_chars++; // still need to count the big newline character that was printed
+			}
+			else
+			{
+				total_chars += (chars_placed - 10) / CHARS_PER_BIG_CHAR; // same thing, but there isn't a newline at the end, space left for null terminator
+			}
 			offset = 0;
 			continue;
 		}

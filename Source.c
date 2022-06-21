@@ -21,7 +21,7 @@ int main(void)
 	size_t test_buff_size;
 	size_t how_far = 0;
 
-	const char buff[] = { "Hello, Buffer!\n%d"};
+	const char buff[] = {"Hello, Buffer!\n%d\n"};
 	test_buff_size = format_str_to_buff_size(buff, 5);
 
 	test_buff = (char*)malloc(test_buff_size);
@@ -29,7 +29,7 @@ int main(void)
 
 	assert(test_buff != NULL);
 
-	chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Buffer!\n%d", 5);
+	chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Buffer!\n%d\n", 5);
 
 	for (size_t i = 0; test_buff[i] != '\0'; i++)
 	{
