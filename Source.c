@@ -31,7 +31,7 @@ int main(void)
 		printf("%c", test_buff[i]);
 	}
 
-	printf("\nchars_printed: %d\n", chars_printed); // testing this too
+	bigprintf("\nchars_printed: %d\n", chars_printed); // testing the chars_printed return value as well
 	
 	if (test_buff != NULL)
 	{
