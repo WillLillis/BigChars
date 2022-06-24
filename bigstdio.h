@@ -124,9 +124,6 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 	assert(dest_buff != NULL);
 	assert(src_buff != NULL);
 
-	retWrapper layer_temp;
-	size_t dest_buff_index = 0;
-
 	if (bigcharsperbuffer(dest_buff_size) < offset - 1) // if there's not enough space in the destination buffer, just print what characters we can
 	{
 		size_t temp_offset = bigcharsperbuffer(dest_buff_size);
@@ -141,6 +138,9 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 		assert(overrun_flag != NULL);
 		*overrun_flag = true; // if we don't have enough space, better tell the caller
 	}
+
+	retWrapper layer_temp;
+	size_t dest_buff_index = 0;
 
 	for (int curr_layer = 0; curr_layer < NUM_LAYERS; curr_layer++) // for each layer in the big char line
 	{
@@ -357,8 +357,6 @@ int bigprintf(const char* format, ...)
 {
 	assert(format != NULL); // is this actually needed/ helpful?
 
-	size_t offset = 0;
-	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 	va_list argptr; 
 
 	va_start(argptr, format); // argptr should now point to first unnamed argument (and not format?)
@@ -377,6 +375,9 @@ int bigprintf(const char* format, ...)
 	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
 	// we can optimize later
 	va_end(argptr);
+
+	size_t offset = 0;
+	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 
 	// iterate through buffer until a newline or null terminator char is found, 
 	// pass the starting point and the number of chars to go out past that to printbigCharLine
@@ -427,8 +428,6 @@ int bigfprintf(FILE* stream, const char* format, ...)
 	assert(stream != NULL);
 	assert(format != NULL); // is this actually needed/ helpful?
 	
-	size_t offset = 0;
-	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 	va_list argptr;
 
 	va_start(argptr, format); // argptr should now point to first unnamed argument (and not format?)
@@ -447,6 +446,9 @@ int bigfprintf(FILE* stream, const char* format, ...)
 	// could eliminate call by having function pass out pointer to buffer by reference, return size of it
 	// we can optimize later
 	va_end(argptr);
+
+	size_t offset = 0;
+	char stop_char = 2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
 
 	// iterate through buffer until a newline or null terminator char is found, 
 	// pass the starting point and the number of chars to go out past that to printbigCharLine
@@ -499,13 +501,8 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 	assert(dest_buff != NULL);
 	assert(format != NULL); // is this actually needed/ helpful?
 
-	size_t offset = 0;
-	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
-	size_t chars_placed;
-	int total_chars = 0;
 	va_list argptr;
-	bool overrun_flag = false;
-	
+
 	va_start(argptr, format); // argptr should now point to first unnamed argument (and not format?)
 	size_t buff_size = FmtStrtoNumChars(format, argptr); 
 	va_end(argptr);
@@ -524,13 +521,18 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 	// we can optimize later
 	va_end(argptr);
 
+	size_t offset = 0;
+	char stop_char = (char)2; // 2 is Start of text (STX) character, starting value doesn't really matter, just can't be '\0'
+	size_t chars_placed;
+	int total_chars = 0;
+	bool overrun_flag = false;
+
 	// iterate through buffer until a newline or null terminator char is found, 
 	// pass the starting point and the number of chars to go out past that to printbigCharLine
 	while (stop_char != '\0' && !overrun_flag)
 	{
 		if (work_buffer[offset] == '\n' || work_buffer[offset] == '\0')
-		{
-			// clean this up 
+		{ // could use some more stringent testing here...
 			stop_char = work_buffer[offset];
 			chars_placed = snprintbigCharLine(dest_buff, dest_buff_size, work_buffer, offset, stop_char == '\n', &overrun_flag);
 			work_buffer += offset + (size_t)1; // set the starting point for the next line, we won't access this address if we reached the null terminator so incrementing this too much by 1 shouldn't be an issue
