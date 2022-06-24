@@ -7,19 +7,19 @@
 #include"BigCharsDef.h"
 #include"bigstdio_switches.h"
 
-#define	NUM_LAYERS			11
+//#define	NUM_LAYERS			11 // defined in bigstdio_switch.h, don't want this in two places
 #define CHARS_PER_LAYER		12
 #define MAX_CHARS			65535 // completely arbitrary
 #define CHARS_PER_BIG_CHAR	132 // 11 lines times 12 chars per line
 
 // lil helper function guy 
-inline fmin(size_t a, size_t b)
+inline size_t fmin(size_t a, size_t b)
 {
 	return a < b ? a : b;
 }
 
 // lil helper function guy 
-inline fmax(size_t a, size_t b)
+inline size_t fmax(size_t a, size_t b)
 {
 	return a > b ? a : b;
 }
