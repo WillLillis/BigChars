@@ -1,10 +1,7 @@
 #include"bigstdio.h"
 
-
 int main(void)
 {
-	//bigprintf("Hello, World!\nThis is bigprintf\nIt even\ntakes\nparameters!\n%c\n0x%X\n", 126, 8311999);
-
 	/*FILE* testFile;
 	errno_t err;
 
@@ -19,24 +16,22 @@ int main(void)
 
 	char* test_buff;
 	size_t test_buff_size;
-	size_t how_far = 0;
 
-	const char buff[] = {"Hello, Buffer!\n%d\n"};
-	test_buff_size = format_str_to_buff_size(buff, 5);
+	const char buff[] = {"Hello, Dr. Brown!\n%s, %d"}; // format string we're going to print to test_buff
+	test_buff_size = format_str_to_buff_size(buff, "Excellent", 1905); // grab the required size of test_buff
 
+	assert(test_buff_size > 0); 
 	test_buff = (char*)malloc(test_buff_size);
-	int chars_printed;
-
 	assert(test_buff != NULL);
 
-	chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Buffer!\n%d\n", 5);
+	int chars_printed = bigsnprintf(test_buff, test_buff_size, "Hello, Dr. Brown!\n%s, %d", "Excellent", 1905); // print the big chars to test_buff
 
-	for (size_t i = 0; test_buff[i] != '\0'; i++)
+	for (size_t i = 0; test_buff[i] != '\0'; i++) // print test_buff to the console to ensure the code worked properly
 	{
 		printf("%c", test_buff[i]);
 	}
 
-	printf("\nchars_printed: %d\n", chars_printed);
+	printf("\nchars_printed: %d\n", chars_printed); // testing this too
 	
 	if (test_buff != NULL)
 	{

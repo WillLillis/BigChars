@@ -1961,12 +1961,12 @@
 #define ASCII_102_LAYER_2		"    | |  |_|"
 #define ASCII_102_LAYER_3		"  __| |__   "
 #define ASCII_102_LAYER_4		" |__   __|  "
-#define ASCII_102_LAYER_5		"    | |      "
-#define ASCII_102_LAYER_6		"    | |      "
-#define ASCII_102_LAYER_7		"    | |      "
-#define ASCII_102_LAYER_8		"    | |      "
-#define ASCII_102_LAYER_9		"    | |      "
-#define ASCII_102_LAYER_10		"    |_|      "
+#define ASCII_102_LAYER_5		"    | |     "
+#define ASCII_102_LAYER_6		"    | |     "
+#define ASCII_102_LAYER_7		"    | |     "
+#define ASCII_102_LAYER_8		"    | |     "
+#define ASCII_102_LAYER_9		"    | |     "
+#define ASCII_102_LAYER_10		"    |_|     "
 
 #define f_LAYER_0				ASCII_102_LAYER_0
 #define f_LAYER_1				ASCII_102_LAYER_1

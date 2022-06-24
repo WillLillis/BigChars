@@ -8,7 +8,7 @@
 
 #define	NUM_LAYERS			11
 #define CHARS_PER_LAYER		12
-#define MAX_CHARS			65535
+#define MAX_CHARS			65535 // completely arbitrary
 #define CHARS_PER_BIG_CHAR	132 // 11 lines times 12 chars per line
 
 inline fmin(size_t a, size_t b)
@@ -21,22 +21,56 @@ inline fmax(size_t a, size_t b)
 	return a > b ? a : b;
 }
 
+// - Struct to "wrap" the 13 char arrays in in order to return them from the 
+// "getbigCharLayer" function, as C doesn't allow returning the arrays
+// directly
 typedef struct retWrapper {
 	char layer[13];
 }retWrapper;
 
+/****************************************************************************
+* retWrapperAssign
+*
+* - Assigns the contents of the char array passed in to the retWrapper's 
+* character array (layer)
+*
+* Parameters
+* - struct_in : the retWrapper struct to have the char array copied to
+* - input : 13 char array (including null terminator) whose contents will be 
+* copied to the struct
+*
+* Returns
+* - none
+****************************************************************************/
 void retWrapperAssign(retWrapper* struct_in, const char input[13])
 {
+	assert(struct_in != NULL);
+
 	for (int i = 0; i < 13; i++)
 	{
 		struct_in->layer[i] = input[i];
 	}
 }
 
-// returns a struct holding the string literal for the requested layer of the given char 
-// seems to be some overhead in this approach with having to wrap the array in a struct in order to return it, may be better just to print it inside the function
-// gross disgusting nested switch statements for each character and each of their layers
-// there has to be a better way
+/****************************************************************************
+* getbigCharLayer
+*
+* - Returns a retWrapper struct whose layer data member is specified layer
+* of the requested big character
+* - Terrible, Horrible, No Good, Very Bad nested switch statement...is there
+* a better way?
+*
+* Parameters
+* - in_char : the ASCII character whose "big char" the caller is requesting
+*	- (for now) definitions only cover 32 (SPACE) to 126 (~), although it will
+*	return an "empty" 13 char array (first character being \0) for chars 0-31,
+*	rather than triggering the assert
+*	- extended ASCII characters to be added at a later date
+* - layer : the requested layer of in_char's "big char" representation
+*
+* Returns
+* - retWrapper : struct containing the requested char's "big char" layer
+****************************************************************************/
 retWrapper getbigCharLayer(char in_char, int layer)
 {
 	assert(in_char >= 0 && in_char <= 126);
@@ -3303,37 +3337,37 @@ retWrapper getbigCharLayer(char in_char, int layer)
 	case 120:
 		switch (layer) {
 		case 0:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_0);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_0);
 			break;
 		case 1:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_1);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_1);
 			break;
 		case 2:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_2);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_2);
 			break;
 		case 3:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_3);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_3);
 			break;
 		case 4:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_4);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_4);
 			break;
 		case 5:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_5);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_5);
 			break;
 		case 6:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_6);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_6);
 			break;
 		case 7:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_7);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_7);
 			break;
 		case 8:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_8);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_8);
 			break;
 		case 9:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_9);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_9);
 			break;
 		case 10:
-			retWrapperAssign(&wrapper, ASCII_110_LAYER_10);
+			retWrapperAssign(&wrapper, ASCII_120_LAYER_10);
 			break;
 		}
 		break;
@@ -3567,9 +3601,24 @@ retWrapper getbigCharLayer(char in_char, int layer)
 	return wrapper;
 }
 
-// prints the requested layer of the given char
-// gross disgusting nested switch statements for each character and each of their layers
-// there has to be a better way
+/****************************************************************************
+* printbigCharLayer
+*
+* - prints the specified layer of the requested "big char" with a call to 
+* printf
+* - Terrible, Horrible, No Good, Very Bad nested switch statement...is there
+* a better way?
+*
+* Parameters
+* - in_char : the ASCII character whose "big char" the caller is requesting
+*	- (for now) definitions only cover 32 (SPACE) to 126 (~), although it will
+*	print nothing for chars 0-31, rather than triggering the assert
+*	- extended ASCII characters to be added at a later date
+* - layer : the requested layer of in_char's "big char" representation
+*
+* Returns
+* - none
+****************************************************************************/
 void printbigCharLayer(char in_char, int layer)
 {
 	assert(in_char >= 0 && in_char <= 126);
@@ -7097,6 +7146,25 @@ void printbigCharLayer(char in_char, int layer)
 	}
 }
 
+/****************************************************************************
+* printbigCharLine
+*
+* - prints the the "big char" representation of the buffer passed in, from 
+* the address "buffer" to address buffer + (offset - 1)
+* - should only be called to print a single line of big chars
+* 
+* - Should I add error checking based off of the return value of the printf
+* call in printbigCharLayer?
+*
+* Parameters
+* - buffer : the char buffer of normal chars to be translated to "big chars",
+* buffer specifies the starting address of the buffer
+* - offset : specifies how far to go past the buffer address. As each char is
+* one byte, this also specifies how many chars we're printing
+*
+* Returns
+* - none
+****************************************************************************/
 void printbigCharLine(char* buffer, size_t offset)
 {
 	assert(buffer != NULL);
@@ -7111,6 +7179,26 @@ void printbigCharLine(char* buffer, size_t offset)
 	printf("\n");
 }
 
+/****************************************************************************
+* fprintbigCharLine
+*
+* - prints the the "big char" representation of the buffer passed in to the
+* specified FILE stream, from the address "buffer" to address 
+* buffer + (offset - 1)
+* - should only be called to print a single line of big chars
+* 
+* - Should I add error checking based off of the return value of fprintf?
+*
+* Parameters
+* - stream : the FILE stream to print the big chars to
+* - buffer : the char buffer of normal chars to be translated to "big chars",
+* buffer specifies the starting address of the buffer
+* - offset : specifies how far to go past the buffer address. As each char is
+* one byte, this also specifies how many chars we're printing
+*
+* Returns
+* - none
+****************************************************************************/
 void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
 {
 	assert(stream != NULL);
@@ -7126,6 +7214,33 @@ void fprintbigCharLine(FILE* stream, char* buffer, size_t offset)
 	fprintf(stream, "\n");
 }
 
+/****************************************************************************
+* snprintbigCharLine
+*
+* - prints the the "big char" representation of the buffer passed in to the
+* specified buffer. 
+* - function will determine if all of the big chars can be fit in dest_buff,
+* based off of dest_buff_size
+*	- If there is insufficient space, the function will print as many chars 
+*	as it can while avoiding partially printing a character 
+* - should only be called to print a single line of big chars to a buffer
+*
+* Parameters
+* - dest_buff : pointer to the address where big chars will begin to be stored 
+* - dest_buff_size : the size of dest_buff in bytes
+* - src_buff : the starting address of normal chars from which the routine will
+* translate big chars from to store in dest_buff
+* - offset : specifies how far to go past the src_buff address. As each char is
+* one byte, this also specifies how many chars we're printing
+* - trailing_newline : specifies whether a newline character should be placed 
+* at the end of the buffer (after the last layer of the last big char)
+* - overrun_flag : boolean passed in by reference, indicates to the caller if
+* dest_buff had insufficient space to store the big char representation of the 
+* supplied src_buff inside of dest_buff
+*
+* Returns
+* - size_t : returns the number of regular chars copied to dest_buff
+****************************************************************************/
 size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff, size_t offset, bool trailing_newline, bool* overrun_flag)
 {
 	assert(dest_buff != NULL);
@@ -7156,7 +7271,7 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 			layer_temp = getbigCharLayer(src_buff[curr_offset], curr_layer); // grab the current char's current layer
 			for (unsigned int i = 0; i < CHARS_PER_LAYER; i++) // assign the characters one by one to the destination buffer
 			{
-				dest_buff[dest_buff_index++] = layer_temp.layer[i];
+				dest_buff[dest_buff_index++] = layer_temp.layer[i]; // should I make this a function call? Seems reusable
 			}
 		}
 		if ((curr_layer < NUM_LAYERS - 1) || trailing_newline)
@@ -7167,19 +7282,35 @@ size_t snprintbigCharLine(char* dest_buff, size_t dest_buff_size, char* src_buff
 	return dest_buff_index;
 }
 
-size_t FmtStrtoNumChars(const char* format, ...)
+/****************************************************************************
+* FmtStrtoNumChars
+*
+* - takes in a printf/fprintf-style format string (and its variable number of 
+* optional arguments) and returns the number of bytes required to store the 
+* resulting string, had it been printed (including the null terminator)
+* 
+* Could play around a bit with the common and max buff_size's to optimize things
+*
+* Parameters
+* - format : printf-style const char format string
+* - args : va_list giving the routine access to the variable optional arguments
+* specified by the contents of the format string
+*
+* Returns
+* - size_t : the number of number of bytes required to store the 
+* resulting string, had it been printed (including the null terminator)
+****************************************************************************/
+size_t FmtStrtoNumChars(const char* format, va_list args)
 {
 	char* buffer;
 	const size_t common_buff_size = 256;
-	const size_t max_buff_size = MAX_CHARS + 1; // make this way bigger
+	const size_t max_buff_size = MAX_CHARS + 1; // make this way bigger?
 	size_t actual_buff_size;
-	va_list argptr;
+	va_list argptr = args; 
 
-	buffer = (char*)malloc(common_buff_size); // no need to do * sizeof(char) because that's just one byte
+	buffer = (char*)malloc(common_buff_size); 
 	assert(buffer != NULL);
-	va_start(argptr, format); // argptr should now point to first unnamed argument (and not format?)
-	actual_buff_size = vsnprintf(buffer, common_buff_size, format, argptr);
-	va_end(argptr);
+	actual_buff_size = vsnprintf(buffer, common_buff_size, format, args);
 
 	if (actual_buff_size >= 0 && actual_buff_size <= common_buff_size)
 	{
@@ -7190,9 +7321,9 @@ size_t FmtStrtoNumChars(const char* format, ...)
 		free(buffer);
 		buffer = (char*)malloc(max_buff_size); // no need to do * sizeof(char) because that's just one byte
 		assert(buffer != NULL);
-		va_start(argptr, format);
+		//va_start(argptr, format);
 		actual_buff_size = vsnprintf(buffer, max_buff_size, format, argptr);
-		va_end(argptr);
+		//va_end(argptr);
 
 		if (actual_buff_size >= 0) // might truncate, but that's ok
 		{
@@ -7207,9 +7338,23 @@ size_t FmtStrtoNumChars(const char* format, ...)
 	}
 }
 
-// The number of "big chars" you can fit in a buffer with the specified size
-// assumes there's a trailing newline or null terminator character at the end of the last layer
-// only correct if passed in a single line buffer (to be used by printline functions only)
+/****************************************************************************
+* bigcharsperbuffer
+*
+* - takes in a size (in bytes) and returns the number of big chars that could 
+* be stored in that space, 
+* - assumes there's a trailing newline or null terminator character at the 
+* end of the last layer
+* - only correct if passed in a single line buffer (to be used by printline 
+* functions only)
+*
+* Parameters
+* - buff_size : the size in question
+*
+* Returns
+* - unsigned long : the number of big chars (in a single big char line) that 
+* could be stored in a buffer of buff_size size
+****************************************************************************/
 unsigned long bigcharsperbuffer(size_t buff_size)
 {
 	if (buff_size < 11)
@@ -7222,7 +7367,23 @@ unsigned long bigcharsperbuffer(size_t buff_size)
 	return buff_size / CHARS_PER_BIG_CHAR; // then see how many big chars fit in the remaining space
 }
 
-// required buffer size for a big character representation of the given buffer
+/****************************************************************************
+* buff_to_big_buff_size
+*
+* - takes in a buffer of regular chars, and retuns the required size for a 
+* buffer to store the big char representation of the original buffer
+* - only checks through first MAX_CHARS chars of the source buffer, in order 
+* to mitigate against some stupid inputs without null terminators
+* 
+*- what are some other security measures that could be taken here?
+*
+* Parameters
+* - src_buff : address of the input buffer of regular chars
+*
+* Returns
+* - size_t : size in bytes for a buffer to store the big char representation 
+* of the original buffer
+****************************************************************************/
 size_t buff_to_big_buff_size(const char* src_buff)
 {
 	assert(src_buff != NULL);
@@ -7230,25 +7391,41 @@ size_t buff_to_big_buff_size(const char* src_buff)
 	unsigned long num_lines = 1;
 	size_t accum = 0;
 
-	while (src_buff[curr_char] != '\0')
+	while (src_buff[curr_char] != '\0' && curr_char < MAX_CHARS)
 	{
-		if (src_buff[curr_char] == '\n') // if it's a newline character, it's just printed as so (1-1 correspondence)
+		if (src_buff[curr_char] == '\n') // newline chars need to be treated a little differently...
 		{
 			num_lines++;
 		}
-		else // otherwise we'll assume it's a printable character, and thus needs CHARS_PER_BIG_CHAR space
+		else // ...otherwise we'll assume it's a printable character, and thus needs CHARS_PER_BIG_CHAR bytes of space
 		{
 			accum += CHARS_PER_BIG_CHAR;
 		}
 		curr_char++;
 	}
 
-	accum += (size_t)num_lines * (size_t)NUM_LAYERS;
+	accum += (size_t)num_lines * (size_t)NUM_LAYERS; // a big char newline means 11 new line characters (one for each layer)
 	
-	return accum; // one more for the null terminator
+	return accum; 
 }
 
-// pass in the same arguments as you would to printf, get back the required buffer size for the string's big char representation
+/****************************************************************************
+* format_str_to_buff_size
+*
+* - takes in a printf/fprintf-style format string (and its variable number of 
+* optional arguments) and returns the number of bytes required to store the 
+* big char representation of the resulting string, had it been printed 
+* (including the null terminator)
+*
+* Parameters
+* - format : printf style format string
+* - ... (additional arguments) : variable number of optional arguments to be 
+* passed in depending on the contents of format
+*
+* Returns
+* - size_t : size in bytes for a buffer to store the big char representation
+* of the string specified by format and its zero or more optional arguments
+****************************************************************************/
 size_t format_str_to_buff_size(const char* format, ...)
 {
 	size_t temp_buff_size, big_buff_size;
@@ -7264,7 +7441,6 @@ size_t format_str_to_buff_size(const char* format, ...)
 	}
 
 	temp_buff = (char*)malloc(temp_buff_size);
-	
 	assert(temp_buff != NULL);
 
 	va_start(argptr, format);
@@ -7281,13 +7457,26 @@ size_t format_str_to_buff_size(const char* format, ...)
 	return big_buff_size;
 }
 
-// do we want to add an automatic window resize in there based on the length of the longest line in the printed big character string?
-/*
-	- Operates in an analogous manner as regular printf, takes in a format string, variable number of arguments, and prints out in "big characters"
-	- Not really sure what to do about letters getting cut in half at the console window's boundary
-		- can grab the window current window size before printing and avoid it that way... but if there's a
-		window resize then it all breaks anyway
-*/
+/****************************************************************************
+* bigprintf
+*
+* - takes in a printf/fprintf-style format string (and its variable number of
+* optional arguments) and prints the big char representation of the resulting
+* string
+* 
+* - Do we want to add automatic window resizing based off of the width of the
+* printed big chars?
+*
+* Parameters
+* - format : printf style format string
+* - ... (additional arguments) : variable number of optional arguments to be
+* passed in depending on the contents of format
+*
+* Returns
+* - int : matching the style of normal printf, this will return the number of 
+* big chars printed
+*	- in the case of an error, a negative number will be returned
+****************************************************************************/
 int bigprintf(const char* format, ...)
 {
 	size_t offset = 0;
@@ -7337,6 +7526,27 @@ int bigprintf(const char* format, ...)
 	return (int)(buff_size - 1); // printed everything but the null terminator
 }
 
+/****************************************************************************
+* bigfprintf
+*
+* - takes in a printf/fprintf-style format string (and its variable number of
+* optional arguments) and prints the big char representation of the resulting
+* string to the specified FILE stream
+*
+* - Do we want to add error checking based off of the calls to fprintf in 
+* fprintbigCharLine?
+*
+* Parameters
+* - stream : the FILE stream to print the big chars to
+* - format : printf style format string
+* - ... (additional arguments) : variable number of optional arguments to be
+* passed in depending on the contents of format
+*
+* Returns
+* - int : matching the style of normal fprintf, this will return the number of
+* big chars printed
+*	- in the case of an error, a negative number will be returned
+****************************************************************************/
 int bigfprintf(FILE* stream, const char* format, ...)
 {
 	assert(stream != NULL);
@@ -7388,6 +7598,29 @@ int bigfprintf(FILE* stream, const char* format, ...)
 	return (int)(buff_size - 1); // printed everything but the null terminator
 }
 
+/****************************************************************************
+* bigsnprintf
+*
+* - takes in a printf/fprintf-style format string (and its variable number of
+* optional arguments) and prints the big char representation of the resulting
+* string to the specified buffer, within the size constraints given by 
+* dest_buff_size
+*
+* - Do we want to add error checking based off of the calls to fprintf in
+* snprintbigCharLine?
+*
+* Parameters
+* - dest_buff : address of the start of the buffer to print the big chars to
+* - dest_buff_size : size in bytes of dest_buff
+* - format : printf style format string
+* - ... (additional arguments) : variable number of optional arguments to be
+* passed in depending on the contents of format
+*
+* Returns
+* - int : matching the style of normal snprintf, this will return the number of
+* big chars printed
+*	- in the case of an error, a negative number will be returned
+****************************************************************************/
 int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 {
 	assert(dest_buff != NULL);
@@ -7453,6 +7686,5 @@ int bigsnprintf(char* dest_buff, size_t dest_buff_size, const char* format, ...)
 		free(buffer);
 	}
 
-	// incorrect return value, needs to be number of big chars printed, important distinction between normal new lines and big char new lines
 	return total_chars; // printed everything but the null terminator
 }
