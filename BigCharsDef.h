@@ -1354,10 +1354,10 @@
 
 #define ASCII_80_LAYER_0		"  ______    "
 #define ASCII_80_LAYER_1		" | ____ \\   "
-#define ASCII_80_LAYER_2		" ||     \\\\ "
+#define ASCII_80_LAYER_2		" ||     \\\\  "
 #define ASCII_80_LAYER_3		" ||      || "
-#define ASCII_80_LAYER_4		" ||_____// "
-#define ASCII_80_LAYER_5		" | _____/ "
+#define ASCII_80_LAYER_4		" ||_____//  "
+#define ASCII_80_LAYER_5		" | _____/   "
 #define ASCII_80_LAYER_6		" ||         "
 #define ASCII_80_LAYER_7		" ||         "
 #define ASCII_80_LAYER_8		" ||         "
@@ -1410,9 +1410,9 @@
 
 #define ASCII_82_LAYER_0		"  ______    "
 #define ASCII_82_LAYER_1		" | ____ \\   "
-#define ASCII_82_LAYER_2		" ||     \\\\ "
+#define ASCII_82_LAYER_2		" ||     \\\\  "
 #define ASCII_82_LAYER_3		" ||      || "
-#define ASCII_82_LAYER_4		" ||_____// "
+#define ASCII_82_LAYER_4		" ||_____//  "
 #define ASCII_82_LAYER_5		" |  ____/   "
 #define ASCII_82_LAYER_6		" ||\\\\       "
 #define ASCII_82_LAYER_7		" || \\\\      "
@@ -1434,7 +1434,7 @@
 #define ASCII_83_LAYER_7		"      \\ \\   "
 #define ASCII_83_LAYER_8		"   _   | |  "
 #define ASCII_83_LAYER_9		"  | |  | |  "
-#define ASCII_83_LAYER_10		"   \\____/    "
+#define ASCII_83_LAYER_10		"   \\____/   "
 
 #define S_LAYER_0				ASCII_83_LAYER_0
 #define S_LAYER_1				ASCII_83_LAYER_1
